@@ -11,13 +11,48 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var core_1 = require("@angular/core");
 require("rxjs/add/operator/catch");
 require("rxjs/add/observable/throw");
+var MyHue = new huepi();
 var AppComponent = (function () {
     function AppComponent() {
         this.name = 'Angular';
-        //this.discoverLocalBridge(this.hue);
-        var MyHue = new huepi();
         this.ConnectToHueBridge(MyHue);
+        this.groups = MyHue.Groups;
+        //console.log(this.groups);
+        for (var g in this.groups) {
+            console.log(g);
+        }
+        //MyHue.GroupOff(0);
     }
+    AppComponent.prototype.onLightSwitchOn = function () {
+        MyHue.GroupOn(0);
+        MyHue.GroupSetCT(0, 467);
+        MyHue.GroupSetBrightness(0, 144);
+        console.log("done on");
+    };
+    AppComponent.prototype.onLightSwitchOff = function () {
+        MyHue.GroupOff(0);
+        console.log("done off");
+    };
+    AppComponent.prototype.DemoBehaviour = function () {
+        MyHue.GroupOff(0);
+        console.log("done");
+    };
+    AppComponent.prototype.StatusHeartbeat = function (MyHue) {
+        MyHue.BridgeGetData().then(function UpdateUI() {
+            console.log('Bridge Name: ' + MyHue.BridgeName);
+            console.log('Connected');
+            //$('#HUEInfoBar').slideUp(1500);
+            //$('#brightnessslider').val(MyHue.Lights[2].state.bri); // Get brightness of 2nd light for now...
+            //$('#brightnessslider').slider('refresh');
+            //DemoBehaviour();
+        }, function BridgeGetDataFailed() {
+            console.log('StatusHeartbeat BridgeGet Failed');
+            setTimeout(function () {
+                this.onPause(MyHue);
+                this.onResume();
+            }, 100);
+        });
+    };
     AppComponent.prototype.ConnectToHueBridge = function (MyHue) {
         if (!localStorage.MyHueBridgeIP) {
             console.log("Trying to discover HUE Bridge via Hue Portal");
@@ -75,7 +110,7 @@ var AppComponent = (function () {
 AppComponent = __decorate([
     core_1.Component({
         selector: 'my-app',
-        template: "<h1>Hello {{name}}</h1>",
+        template: "\n    <h1>Hello {{name}}</h1>\n    <div>\n      <ul>\n        <li *ngFor=\"let group of groups\">\n          {{group}}\n        </li>\n      </ul>\n    </div>\n    <Button (click)=\"onLightSwitchOn()\">On</Button>\n    <Button (click)=\"onLightSwitchOff()\">Off</Button>",
     }),
     __metadata("design:paramtypes", [])
 ], AppComponent);

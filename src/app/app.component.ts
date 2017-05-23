@@ -6,20 +6,74 @@ import 'rxjs/add/observable/throw';
 declare var huepi:any;
 declare var jQuery:any;
 
+var MyHue = new huepi();
 
 @Component({
   selector: 'my-app',
-  template: `<h1>Hello {{name}}</h1>`,
+  template: `
+    <h1>Hello {{name}}</h1>
+    <div>
+      <ul>
+        <li *ngFor="let group of groups">
+          {{group}}
+        </li>
+      </ul>
+    </div>
+    <Button (click)="onLightSwitchOn()">On</Button>
+    <Button (click)="onLightSwitchOff()">Off</Button>`,
 })
   export class AppComponent  {
     name = 'Angular';
+    HeartbeatInterval:any;
+    groups: string[];
 
     constructor(){
-      //this.discoverLocalBridge(this.hue);
-      let MyHue = new huepi();
       this.ConnectToHueBridge(MyHue);
+      this.groups = MyHue.Groups;
+      //console.log(this.groups);
+      for(var g in this.groups){
+        console.log(g);
+      }
+
+      //MyHue.GroupOff(0);
     }
 
+    onLightSwitchOn() {
+      MyHue.GroupOn(0);
+      MyHue.GroupSetCT(0, 467);
+      MyHue.GroupSetBrightness(0, 144);
+      console.log("done on");
+    }
+
+    onLightSwitchOff() {
+      MyHue.GroupOff(0);
+      console.log("done off");
+    }
+
+    DemoBehaviour() {
+      MyHue.GroupOff(0);
+
+      console.log("done");
+    }
+
+
+    StatusHeartbeat(MyHue:any) {
+      MyHue.BridgeGetData().then(function UpdateUI() {
+        console.log('Bridge Name: ' + MyHue.BridgeName);
+        console.log('Connected');
+        //$('#HUEInfoBar').slideUp(1500);
+
+        //$('#brightnessslider').val(MyHue.Lights[2].state.bri); // Get brightness of 2nd light for now...
+        //$('#brightnessslider').slider('refresh');
+        //DemoBehaviour();
+    }, function BridgeGetDataFailed() {
+        console.log('StatusHeartbeat BridgeGet Failed');
+        setTimeout(function() {
+          this.onPause(MyHue);
+          this.onResume();
+        }, 100);
+      });
+    }
 
 ConnectToHueBridge(MyHue:any){
   if(!(localStorage as any).MyHueBridgeIP){ // No chaced BridgeIP?
