@@ -16,12 +16,14 @@ var MyHue = new huepi();
 var AppComponent = (function () {
     function AppComponent() {
         this.name = 'Angular';
-        this.lightgroups = [];
+        this.hueGroups = [];
+        this.hueLights = [];
     }
     AppComponent.prototype.ngOnInit = function () {
         var _this = this;
         this.ConnectToHueBridge(MyHue)
             .then(function () { return _this.listAllGroups(); })
+            .then(function () { return _this.listAllLights(); })
             .catch(function (error) {
             _this.ConnectToHueBridgeError = error;
             console.log(_this.ConnectToHueBridgeError);
@@ -78,22 +80,35 @@ var AppComponent = (function () {
         });
     };
     AppComponent.prototype.listAllGroups = function () {
+        console.log("");
+        console.log("---Groups---");
         console.log(MyHue.Groups);
         for (var g in MyHue.Groups) {
             console.log(g);
             console.log(MyHue.Groups[g].name);
-            this.lightgroups.push(g);
+            for (var id = 0; id < MyHue.Groups[g].lights.length; id++) {
+                console.log("LightID:" + MyHue.Lights[MyHue.Groups[g].lights[id]].name); // Returns the name of the Lights
+            }
+            this.hueGroups.push(MyHue.Groups[g]);
         }
-        console.log("done loading groups");
+    };
+    AppComponent.prototype.listAllLights = function () {
+        console.log("");
+        console.log("---LIGHTS---");
+        console.log(MyHue.Lights);
+        for (var l in MyHue.Lights) {
+            console.log(MyHue.Lights[l]);
+            this.hueLights.push(MyHue.Lights[l]);
+        }
     };
     AppComponent.prototype.onLightSwitchOn = function () {
-        MyHue.GroupOn(this.lightgroups[4]);
+        MyHue.GroupOn(this.hueGroups[0]);
         MyHue.GroupSetCT(0, 467);
         MyHue.GroupSetBrightness(0, 144);
         console.log("done on");
     };
     AppComponent.prototype.onLightSwitchOff = function () {
-        MyHue.GroupOff(this.lightgroups[4]);
+        MyHue.GroupOff(this.hueGroups[0]);
         console.log("done off");
     };
     AppComponent.prototype.StatusHeartbeat = function (MyHue) {
@@ -117,7 +132,7 @@ var AppComponent = (function () {
 AppComponent = __decorate([
     core_1.Component({
         selector: 'my-app',
-        template: "\n    <h1>Hello {{name}}</h1>\n    <div>\n      <ul>\n        <li *ngFor=\"let group of lightgroups\">\n          {{group}}\n        </li>\n      </ul>\n    </div>\n    <Button (click)=\"onLightSwitchOn()\">On</Button>\n    <Button (click)=\"onLightSwitchOff()\">Off</Button>\n    <Button (click)=\"listAllGroups()\"> Get Groups</Button>",
+        template: "\n    <h1>Hello {{name}}</h1>\n    <div>\n      <ul>\n        <li *ngFor=\"let group of hueGroups\">\n          {{group.name}}\n          <li *ngFor=\"let light of hueLights; let i = index\">\n          {{hueLights[group.lights[i]].name}}\n        </li>\n      </ul>\n    </div>\n    <Button (click)=\"onLightSwitchOn()\">On</Button>\n    <Button (click)=\"onLightSwitchOff()\">Off</Button>\n    <Button (click)=\"listAllGroups()\"> Get Groups</Button>",
     }),
     __metadata("design:paramtypes", [])
 ], AppComponent);
