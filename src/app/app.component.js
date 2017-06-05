@@ -12,22 +12,40 @@ var core_1 = require("@angular/core");
 require("rxjs/add/observable/of");
 require("rxjs/add/operator/catch");
 require("rxjs/add/observable/throw");
+require("rxjs/add/operator/map");
+require("rxjs/Rx");
 var MyHue = new huepi();
 var AppComponent = (function () {
     function AppComponent() {
         this.name = 'Angular';
         this.hueGroups = [];
-        this.hueLights = [];
+        this.fullGroup = [];
     }
     AppComponent.prototype.ngOnInit = function () {
         var _this = this;
         this.ConnectToHueBridge(MyHue)
             .then(function () { return _this.listAllGroups(); })
-            .then(function () { return _this.listAllLights(); })
             .catch(function (error) {
             _this.ConnectToHueBridgeError = error;
             console.log(_this.ConnectToHueBridgeError);
+        })
+            .then(function () { return _this.createFullGroup(); });
+    };
+    AppComponent.prototype.createFullGroup = function () {
+        this.fullGroup = this.hueGroups.map(function (group) {
+            var lightElement = group.lights.map(function (lightID) {
+                var fullLightObject = { fullLight_ID: "", fullLight_Name: "" };
+                console.log("LightID:" + lightID);
+                console.log("LightName:" + MyHue.Lights[lightID].name);
+                fullLightObject.fullLight_ID = lightID;
+                fullLightObject.fullLight_Name = MyHue.Lights[lightID].name;
+                lightID = fullLightObject;
+                return lightID;
+            });
+            group.lights = lightElement;
+            return group;
         });
+        console.log(this.fullGroup);
     };
     AppComponent.prototype.ConnectToHueBridge = function (MyHue) {
         return new Promise(function (resolve, reject) {
@@ -82,29 +100,19 @@ var AppComponent = (function () {
     AppComponent.prototype.listAllGroups = function () {
         console.log("");
         console.log("---Groups---");
-        console.log(MyHue.Groups);
         for (var g in MyHue.Groups) {
-            console.log(g);
-            console.log(MyHue.Groups[g].name);
             for (var id = 0; id < MyHue.Groups[g].lights.length; id++) {
                 console.log("LightID:" + MyHue.Lights[MyHue.Groups[g].lights[id]].name); // Returns the name of the Lights
             }
             this.hueGroups.push(MyHue.Groups[g]);
         }
-    };
-    AppComponent.prototype.listAllLights = function () {
-        console.log("");
-        console.log("---LIGHTS---");
-        console.log(MyHue.Lights);
-        for (var l in MyHue.Lights) {
-            console.log(MyHue.Lights[l]);
-            this.hueLights.push(MyHue.Lights[l]);
-        }
+        console.log(this.hueGroups);
     };
     AppComponent.prototype.onLightSwitchOn = function () {
-        MyHue.GroupOn(this.hueGroups[0]);
-        MyHue.GroupSetCT(0, 467);
-        MyHue.GroupSetBrightness(0, 144);
+        MyHue.LightOn();
+        //MyHue.GroupOn(this.hueGroups[0]);
+        //MyHue.GroupSetCT(0, 467);
+        //MyHue.GroupSetBrightness(0, 144);
         console.log("done on");
     };
     AppComponent.prototype.onLightSwitchOff = function () {
@@ -132,7 +140,7 @@ var AppComponent = (function () {
 AppComponent = __decorate([
     core_1.Component({
         selector: 'my-app',
-        template: "\n    <h1>Hello {{name}}</h1>\n    <div>\n      <ul>\n        <li *ngFor=\"let group of hueGroups\">\n          {{group.name}}\n          <li *ngFor=\"let light of hueLights; let i = index\">\n          {{hueLights[group.lights[i]].name}}\n        </li>\n      </ul>\n    </div>\n    <Button (click)=\"onLightSwitchOn()\">On</Button>\n    <Button (click)=\"onLightSwitchOff()\">Off</Button>\n    <Button (click)=\"listAllGroups()\"> Get Groups</Button>",
+        template: "\n    <h1>Hello {{name}}</h1>\n    <div>\n      <ul>\n        <li *ngFor=\"let group of fullGroup\">\n          {{group.name}}\n          <ul>\n            <li *ngFor=\"let light of group.lights\">\n            {{light.fullLight_ID}}\n            {{light.fullLight_Name}}\n            </li>\n          </ul>\n        </li>\n      </ul>\n    </div>\n    <Button (click)=\"onLightSwitchOn()\">On</Button>\n    <Button (click)=\"onLightSwitchOff()\">Off</Button>\n    <Button (click)=\"listAllGroups()\"> Get Groups</Button>",
     }),
     __metadata("design:paramtypes", [])
 ], AppComponent);

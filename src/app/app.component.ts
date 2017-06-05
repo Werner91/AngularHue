@@ -3,6 +3,8 @@ import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/observable/throw';
+import 'rxjs/add/operator/map'
+import 'rxjs/Rx';
 
 declare var huepi:any;
 declare var jQuery:any;
@@ -15,10 +17,14 @@ var MyHue:any = new huepi();
     <h1>Hello {{name}}</h1>
     <div>
       <ul>
-        <li *ngFor="let group of hueGroups">
+        <li *ngFor="let group of fullGroup">
           {{group.name}}
-          <li *ngFor="let light of hueLights; let i = index">
-          {{hueLights[group.lights[i]].name}}
+          <ul>
+            <li *ngFor="let light of group.lights">
+            {{light.fullLight_ID}}
+            {{light.fullLight_Name}}
+            </li>
+          </ul>
         </li>
       </ul>
     </div>
@@ -30,23 +36,40 @@ var MyHue:any = new huepi();
     name = 'Angular';
     HeartbeatInterval:any;
     hueGroups:any[];
-    hueLights:any[];
-
+    fullGroup:any[];
     ConnectToHueBridgeError:string;
 
     constructor(){
       this.hueGroups = [];
-      this.hueLights = [];
+      this.fullGroup = [];
     }
 
     ngOnInit(){
       this.ConnectToHueBridge(MyHue)
         .then(() => this.listAllGroups())
-        .then(() => this.listAllLights())
         .catch(error => {
           this.ConnectToHueBridgeError = error;
           console.log(this.ConnectToHueBridgeError);
-        });
+        })
+        .then(() => this.createFullGroup())
+    }
+
+
+    createFullGroup(){
+      this.fullGroup = this.hueGroups.map((group:any)=> {
+          let lightElement = group.lights.map((lightID:any) =>{
+            let fullLightObject = { fullLight_ID: "", fullLight_Name: "" }
+            console.log("LightID:" + lightID)
+            console.log("LightName:" + MyHue.Lights[lightID].name)
+            fullLightObject.fullLight_ID = lightID;
+            fullLightObject.fullLight_Name = MyHue.Lights[lightID].name;
+            lightID = fullLightObject;
+            return lightID;
+          })
+          group.lights = lightElement;
+          return group;
+      })
+      console.log(this.fullGroup);
     }
 
     ConnectToHueBridge(MyHue:any){
@@ -102,31 +125,20 @@ var MyHue:any = new huepi();
     listAllGroups(){
       console.log("");
       console.log("---Groups---");
-      console.log(MyHue.Groups);
       for(var g in MyHue.Groups){
-        console.log(g);
-        console.log(MyHue.Groups[g].name);
         for(var id:number = 0; id < MyHue.Groups[g].lights.length; id++){
           console.log("LightID:" + MyHue.Lights[MyHue.Groups[g].lights[id]].name); // Returns the name of the Lights
         }
         this.hueGroups.push(MyHue.Groups[g]);
       }
-    }
-
-    listAllLights(){
-      console.log("");
-      console.log("---LIGHTS---");
-      console.log(MyHue.Lights);
-      for(var l in MyHue.Lights){
-        console.log(MyHue.Lights[l]);
-        this.hueLights.push(MyHue.Lights[l]);
-      }
+      console.log(this.hueGroups);
     }
 
     onLightSwitchOn() {
-      MyHue.GroupOn(this.hueGroups[0]);
-      MyHue.GroupSetCT(0, 467);
-      MyHue.GroupSetBrightness(0, 144);
+      MyHue.LightOn();
+      //MyHue.GroupOn(this.hueGroups[0]);
+      //MyHue.GroupSetCT(0, 467);
+      //MyHue.GroupSetBrightness(0, 144);
       console.log("done on");
     }
 
